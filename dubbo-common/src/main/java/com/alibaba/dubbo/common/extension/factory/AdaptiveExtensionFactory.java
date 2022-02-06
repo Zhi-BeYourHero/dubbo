@@ -32,7 +32,7 @@ public class AdaptiveExtensionFactory implements ExtensionFactory {
 
     private final List<ExtensionFactory> factories;
 
-    public AdaptiveExtensionFactory() {
+    public AdaptiveExtensionFactory() { // 构造的时候就把所有的ExtensionFactory的实现类都缓存住
         ExtensionLoader<ExtensionFactory> loader = ExtensionLoader.getExtensionLoader(ExtensionFactory.class);
         List<ExtensionFactory> list = new ArrayList<ExtensionFactory>();
         for (String name : loader.getSupportedExtensions()) {
@@ -43,7 +43,7 @@ public class AdaptiveExtensionFactory implements ExtensionFactory {
 
     @Override
     public <T> T getExtension(Class<T> type, String name) {
-        for (ExtensionFactory factory : factories) {
+        for (ExtensionFactory factory : factories) { //获取实例的时候遍历factory，只要有一个找到就返回。
             T extension = factory.getExtension(type, name);
             if (extension != null) {
                 return extension;

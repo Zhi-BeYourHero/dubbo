@@ -1,0 +1,2 @@
+hi=com.alibaba.dubbo.common.extensionloader.injection.impl.SayHi
+hello=com.alibaba.dubbo.common.extensionloader.injection.impl.SayHello

@@ -47,6 +47,7 @@ import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt4_ManualAdap
 import com.alibaba.dubbo.common.extensionloader.ext9_empty.Ext9Empty;
 import com.alibaba.dubbo.common.extensionloader.ext9_empty.impl.Ext9EmptyImpl;
 import com.alibaba.dubbo.common.extensionloader.injection.InjectExt;
+import com.alibaba.dubbo.common.extensionloader.injection.Say;
 import com.alibaba.dubbo.common.extensionloader.injection.impl.InjectExtImpl;
 
 import junit.framework.Assert;
@@ -68,6 +69,16 @@ import static org.junit.Assert.fail;
 import static org.junit.matchers.JUnitMatchers.containsString;
 
 public class ExtensionLoaderTest {
+
+    @Test
+    public void test_sayHello() {
+        ExtensionLoader<Say> extensionLoader = ExtensionLoader.getExtensionLoader(Say.class);
+        Say hi = extensionLoader.getExtension("hi");
+        hi.say();
+        Say hello = extensionLoader.getExtension("hello");
+        hello.say();
+    }
+
     @Test
     public void test_getExtensionLoader_Null() throws Exception {
         try {

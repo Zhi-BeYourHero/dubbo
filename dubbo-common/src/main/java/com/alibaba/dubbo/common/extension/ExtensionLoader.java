@@ -50,7 +50,7 @@ import java.util.regex.Pattern;
  * <li>auto wrap extension in wrapper </li>
  * <li>default extension is an adaptive instance</li>
  * </ul>
- *
+ * ExtensionLoader是单例模式
  * @see <a href="http://java.sun.com/j2se/1.5.0/docs/guide/jar/jar.html#Service%20Provider">Service Provider in Java 5</a>
  * @see com.alibaba.dubbo.common.extension.SPI
  * @see com.alibaba.dubbo.common.extension.Adaptive
@@ -434,14 +434,14 @@ public class ExtensionLoader<T> {
 
     @SuppressWarnings("unchecked")
     public T getAdaptiveExtension() {
-        Object instance = cachedAdaptiveInstance.get();
+        Object instance = cachedAdaptiveInstance.get();//从缓存中找
         if (instance == null) {
             if (createAdaptiveInstanceError == null) {
                 synchronized (cachedAdaptiveInstance) {
                     instance = cachedAdaptiveInstance.get();
                     if (instance == null) {
                         try {
-                            instance = createAdaptiveExtension();
+                            instance = createAdaptiveExtension();//找不到就创建一个
                             cachedAdaptiveInstance.set(instance);
                         } catch (Throwable t) {
                             createAdaptiveInstanceError = t;
@@ -491,11 +491,14 @@ public class ExtensionLoader<T> {
         try {
             T instance = (T) EXTENSION_INSTANCES.get(clazz);
             if (instance == null) {
+                // 缓存没有实例就通过反射创建实例
                 EXTENSION_INSTANCES.putIfAbsent(clazz, clazz.newInstance());
                 instance = (T) EXTENSION_INSTANCES.get(clazz);
             }
+            // 通过setter方法依赖注入
             injectExtension(instance);
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
+            // 如果有包装类则包装一下
             if (wrapperClasses != null && !wrapperClasses.isEmpty()) {
                 for (Class<?> wrapperClass : wrapperClasses) {
                     instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
@@ -651,6 +654,7 @@ public class ExtensionLoader<T> {
                     type + ", class line: " + clazz.getName() + "), class "
                     + clazz.getName() + "is not subtype of interface.");
         }
+        // 如果标注了Adaptive注解， 则存一下
         if (clazz.isAnnotationPresent(Adaptive.class)) {
             if (cachedAdaptiveClass == null) {
                 cachedAdaptiveClass = clazz;
@@ -659,6 +663,7 @@ public class ExtensionLoader<T> {
                         + cachedAdaptiveClass.getClass().getName()
                         + ", " + clazz.getClass().getName());
             }
+            // 如果是包装类， 则存一下
         } else if (isWrapperClass(clazz)) {
             Set<Class<?>> wrappers = cachedWrapperClasses;
             if (wrappers == null) {
@@ -666,8 +671,8 @@ public class ExtensionLoader<T> {
                 wrappers = cachedWrapperClasses;
             }
             wrappers.add(clazz);
-        } else {
-            clazz.getConstructor();
+        } else { //进入这个分支说明是普通类
+            clazz.getConstructor(); //没有默认构造器会抛错
             if (name == null || name.length() == 0) {
                 name = findAnnotationName(clazz);
                 if (name.length() == 0) {
@@ -676,17 +681,17 @@ public class ExtensionLoader<T> {
             }
             String[] names = NAME_SEPARATOR.split(name);
             if (names != null && names.length > 0) {
-                Activate activate = clazz.getAnnotation(Activate.class);
+                Activate activate = clazz.getAnnotation(Activate.class); //如果类标注了Activate注解则存一下
                 if (activate != null) {
                     cachedActivates.put(names[0], activate);
                 }
                 for (String n : names) {
                     if (!cachedNames.containsKey(clazz)) {
-                        cachedNames.put(clazz, n);
+                        cachedNames.put(clazz, n);  //记录类到名字到映射
                     }
                     Class<?> c = extensionClasses.get(n);
                     if (c == null) {
-                        extensionClasses.put(n, clazz);
+                        extensionClasses.put(n, clazz); //记录名字到类的映射
                     } else if (c != clazz) {
                         throw new IllegalStateException("Duplicate extension " + type.getName() + " name " + n + " on " + c.getName() + " and " + clazz.getName());
                     }
@@ -720,7 +725,7 @@ public class ExtensionLoader<T> {
     @SuppressWarnings("unchecked")
     private T createAdaptiveExtension() {
         try {
-            return injectExtension((T) getAdaptiveExtensionClass().newInstance());
+            return injectExtension((T) getAdaptiveExtensionClass().newInstance());//通过反射创建实例，并且依赖注入
         } catch (Exception e) {
             throw new IllegalStateException("Can not create adaptive extension " + type + ", cause: " + e.getMessage(), e);
         }
@@ -729,16 +734,16 @@ public class ExtensionLoader<T> {
     private Class<?> getAdaptiveExtensionClass() {
         getExtensionClasses();
         if (cachedAdaptiveClass != null) {
-            return cachedAdaptiveClass;
+            return cachedAdaptiveClass; //如果进入到这里， 说明有Adaptive注解在类上面，直接返回这个类，如 AdaptiveExtensionFactory
         }
-        return cachedAdaptiveClass = createAdaptiveExtensionClass();
+        return cachedAdaptiveClass = createAdaptiveExtensionClass(); //没有则说明需要动态生成类
     }
 
     private Class<?> createAdaptiveExtensionClass() {
-        String code = createAdaptiveExtensionClassCode();
+        String code = createAdaptiveExtensionClassCode(); //生成代码
         ClassLoader classLoader = findClassLoader();
         com.alibaba.dubbo.common.compiler.Compiler compiler = ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.common.compiler.Compiler.class).getAdaptiveExtension();
-        return compiler.compile(code, classLoader);
+        return compiler.compile(code, classLoader); //编译
     }
 
     private String createAdaptiveExtensionClassCode() {

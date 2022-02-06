@@ -18,6 +18,8 @@ package com.alibaba.dubbo.common.utils;
 
 /**
  * Helper Class for hold a value.
+ * Holder存在的意义是引用类型在函数执行的前后可以改变引用类型所指向的内容
+ * <a href="https://blog.csdn.net/LuoZheng4698729/article/details/80008067">Java Holder的使用</a>
  */
 public class Holder<T> {
 
