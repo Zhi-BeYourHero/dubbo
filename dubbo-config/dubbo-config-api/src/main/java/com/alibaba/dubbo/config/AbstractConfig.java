@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
 
 /**
  * Utility methods and public methods for parsing configuration
- *
+ * 抽象配置类，除了 ArgumentConfig ，我们可以看到所有的配置类都继承该类。
  * @export
  */
 public abstract class AbstractConfig implements Serializable {
